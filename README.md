@@ -35,7 +35,7 @@ const name = 'NFT Test';
 const description = 'Description of my NFT';
 const category = CategoryNFT.ART;
 const creator = 'Johny.B';
-const media = ''; /* base64 format */
+const media = ''; /* File or Base64 format */
 const supply = 1; /* Nb of NFT available */
 await client.create({name, description, category, creator, media, supply});
 ```
