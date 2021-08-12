@@ -13,8 +13,8 @@ export interface NFTDto {
     category: CategoryNFT;
     /* Creator of the NFT */
     creator: string;
-    /* Media to linked to the NFT - base64 Format */
-    media: string;
+    /* Media to linked to the NFT - base64 or File Format */
+    media: string | unknown;
     /* Quantity of NFT to create */
     supply: number;
 }
