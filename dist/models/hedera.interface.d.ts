@@ -8,7 +8,7 @@ export interface NFTDto {
     description: string;
     category: CategoryNFT;
     creator: string;
-    media: string;
+    media: string | unknown;
     supply: number;
 }
 export interface NftCreated {
