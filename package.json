@@ -1,6 +1,6 @@
 {
   "name": "@xact-wallet-sdk/nft",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A SDK for NFT creation with Hedera and FileCoin",
   "main": "dist/nft.js",
   "types": "dist/nft.d.ts",
@@ -13,11 +13,11 @@
   "scripts": {
     "prepare": "npm run build",
     "build": "tsc",
-    "publish": "npm run prepare; npm publish",
+    "publish": "npm run prepare; npm publish --access public",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Schnouz <tailorweb.contact@gmail.com>",
-  "license": "ISC",
+  "license": "MIT",
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^4.29.1",
     "@typescript-eslint/parser": "^4.29.1",
@@ -29,7 +29,7 @@
     "typescript": "^4.3.5"
   },
   "dependencies": {
-    "@hashgraph/sdk": "^2.0.27",
+    "@hashgraph/sdk": "2.0.19",
     "axios": "^0.21.1",
     "js-logger": "^1.6.1"
   }
