@@ -8,6 +8,10 @@
 
 `npm i @xact-wallet-sdk/nft`
 
+2. Install @hashgraph/sdk
+
+`npm i @hashgraph/sdk@2.0.19`
+
 ## Before Starting
 
 1. Please create your account on [Hedera Portal.](https://portal.hedera.com/register)
