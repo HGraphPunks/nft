@@ -10,11 +10,13 @@ export interface NFTDto {
     creator: string;
     media: string;
     supply: number;
+    customRoyaltyFee: CustomFee | null;
 }
 export interface NftCreated {
     url: string;
     txId: string;
     tokenId: string;
+    nftId: string;
 }
 export interface Fees {
     hbar: number;
@@ -31,4 +33,9 @@ export declare enum CategoryNFT {
     COLLECTIBLE = "Collectible",
     DOCUMENT = "Document",
     OTHER = "Other"
+}
+export interface CustomFee {
+    numerator: number;
+    denominator: number;
+    fallbackFee: number;
 }

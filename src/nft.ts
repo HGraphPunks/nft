@@ -70,6 +70,9 @@ export class ClientNFT {
             return Promise.reject('Please define at least a Media and a Name for your NFT !');
         }
         try {
+            /* Checking the balance */
+            Logger.info('Checking user\'s balance...');
+            await this.hederaSdk.checkBalance();
             /* Storing the Media */
             Logger.info('Saving the media on FileCoin...');
             cid = await storeNFT({token: this.nftStorageApiKey, ...createNFTDto});
@@ -78,8 +81,9 @@ export class ClientNFT {
             Logger.info('Creating the NFT on Hedera...');
             const res = await this.hederaSdk.createNFT({
                 name: createNFTDto.name,
+                supply: createNFTDto.supply,
                 cid,
-                supply: createNFTDto.supply
+                customFee: createNFTDto.customRoyaltyFee
             });
             Logger.debug('Your NFT will be available soon on', res.url);
             return res;

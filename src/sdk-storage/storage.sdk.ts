@@ -7,7 +7,6 @@ export async function storeNFT({
                                    description,
                                    creator,
                                    category,
-                                   supply,
                                    media
                                }: NFTDto & { token: string }) {
     return axios.post('https://nft.storage/api/upload', {
@@ -15,7 +14,7 @@ export async function storeNFT({
         description,
         creator,
         category,
-        supply,
+        supply: 1,
         photo: media
     }, {
         headers: {

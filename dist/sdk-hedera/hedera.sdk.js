@@ -16,6 +16,7 @@ exports.HederaSdk = void 0;
 const sdk_1 = require("@hashgraph/sdk");
 const axios_1 = __importDefault(require("axios"));
 const hedera_interface_1 = require("../models/hedera.interface");
+const js_logger_1 = __importDefault(require("js-logger"));
 const HEDERA_CREATE_NFT_FEES = 1;
 class HederaSdk {
     constructor(hederaAccount) {
@@ -26,29 +27,46 @@ class HederaSdk {
             environment: this.hederaAccount.environment
         });
     }
-    createNFT({ name, cid, supply }) {
+    createNFT({ name, cid, supply, customFee }) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
+                /* Create a royalty fee */
+                const customRoyaltyFee = [];
+                if (customFee) {
+                    const fee = new sdk_1.CustomRoyaltyFee()
+                        .setNumerator(customFee.numerator) // The numerator of the fraction
+                        .setDenominator(customFee.denominator) // The denominator of the fraction
+                        .setFallbackFee(new sdk_1.CustomFixedFee().setHbarAmount(new sdk_1.Hbar(customFee.fallbackFee))) // The fallback fee
+                        .setFeeCollectorAccountId(this.hederaAccount.accountId); // The account that will receive the royalty fee
+                    customRoyaltyFee.push(fee);
+                }
                 /* Create the NFT */
-                const tx = yield new sdk_1.TokenCreateTransaction()
+                const tx = new sdk_1.TokenCreateTransaction()
+                    .setTokenType(sdk_1.TokenType.NonFungibleUnique)
                     .setTokenName(name)
                     .setTokenSymbol(`IPFS://${cid}`)
-                    .setDecimals(0)
-                    .setInitialSupply(supply)
+                    .setInitialSupply(0)
+                    .setMaxSupply(supply)
+                    .setSupplyType(sdk_1.TokenSupplyType.Finite)
                     .setTreasuryAccountId(this.hederaAccount.accountId)
                     .setAutoRenewAccountId(this.hederaAccount.accountId)
-                    .setAutoRenewPeriod(7776000)
-                    .signWithOperator(this.client);
-                /*  submit to a Hedera network */
-                const response = yield tx.execute(this.client);
+                    .setCustomFees(customRoyaltyFee);
+                const transaction = yield tx.signWithOperator(this.client);
+                /*  submit to the Hedera network */
+                const response = yield transaction.execute(this.client);
                 /* Get the receipt of the transaction */
                 const receipt = yield response.getReceipt(this.client);
                 /* Get the token ID from the receipt */
                 const tokenId = receipt.tokenId;
+                /* Generate the Serial Number */
+                const serialNumber = Math.floor(Math.random() * 90000) + 10000;
+                /* Get the NftId */
+                const nftId = new sdk_1.NftId(new sdk_1.TokenId(sdk_1.TokenId.fromString(tokenId.toString())), serialNumber);
                 return {
                     url: `https://cloudflare-ipfs.com/ipfs/${cid}`,
                     txId: response.transactionId.toString(),
-                    tokenId: receipt.tokenId.toString()
+                    tokenId: tokenId.toString(),
+                    nftId: nftId.toString()
                 };
             }
             catch (e) {
@@ -76,8 +94,10 @@ class HederaSdk {
             const balance = yield this.getBalanceWrapper();
             /* Checking if the user has enough money */
             if (balance < hederaFees.hbar) {
-                yield Promise.reject("You don't have enough money available in your account :: Remaining :: "
-                    + balance + ' :: Price :: ' + hederaFees);
+                const err = "You don't have enough money available in your account :: Remaining :: "
+                    + balance + ' :: Price :: ' + hederaFees;
+                js_logger_1.default.error(err);
+                yield Promise.reject(err);
             }
         });
     }
@@ -107,7 +127,7 @@ class HederaSdk {
                 const balance = yield new sdk_1.AccountBalanceQuery()
                     .setAccountId(this.hederaAccount.accountId)
                     .execute(this.client);
-                return +balance.hbars.toTinybars().toNumber() / 100000000;
+                return +(balance.hbars.toTinybars().toNumber() / 100000000).toFixed(3);
             }
             catch (e) {
                 return Promise.reject(e);
@@ -118,7 +138,7 @@ class HederaSdk {
      * Retry the Get Balance method
      */
     getBalanceWrapper() {
-        return this.retryOperation(this.getBalance(), 2000, 3);
+        return this.retryOperation(this.getBalance(), 4000, 4);
     }
     /**
      * Getting the current HBAR price in usd

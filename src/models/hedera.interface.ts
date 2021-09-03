@@ -17,12 +17,15 @@ export interface NFTDto {
     media: string;
     /* Quantity of NFT to create */
     supply: number;
+    /* Custom Royalty Fees  */
+    customRoyaltyFee: CustomFee | null;
 }
 
 export interface NftCreated {
     url: string;
     txId: string;
     tokenId: string;
+    nftId: string;
 }
 
 export interface Fees {
@@ -42,4 +45,10 @@ export enum CategoryNFT {
     COLLECTIBLE = "Collectible",
     DOCUMENT = "Document",
     OTHER = "Other",
+}
+
+export interface CustomFee {
+    numerator: number,
+    denominator: number,
+    fallbackFee: number,
 }
