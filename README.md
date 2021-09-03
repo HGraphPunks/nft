@@ -37,5 +37,10 @@ const category = CategoryNFT.ART;
 const creator = 'Johny.B';
 const media = ''; /* File or Base64 format */
 const supply = 1; /* Nb of NFT available */
-await client.create({name, description, category, creator, media, supply});
+const customRoyaltyFee = {
+    numerator: 1,
+    denominator: 10,
+    fallbackFee: 100,
+}
+await client.create({name, description, category, creator, media, supply, customRoyaltyFee});
 ```
