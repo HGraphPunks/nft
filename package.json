@@ -29,6 +29,7 @@
     "typescript": "^4.3.5"
   },
   "dependencies": {
+    "@hashgraph/sdk": "^2.0.30",
     "axios": "^0.21.1",
     "js-logger": "^1.6.1"
   }

@@ -1,6 +1,15 @@
-import {AccountBalanceQuery, Client, TokenCreateTransaction} from '@hashgraph/sdk';
+import {
+    AccountBalanceQuery,
+    Client, CustomFixedFee,
+    CustomRoyaltyFee, Hbar,
+    NftId,
+    TokenCreateTransaction,
+    TokenId, TokenSupplyType,
+    TokenType
+} from '@hashgraph/sdk';
 import axios from 'axios';
-import {Fees, HederaAccount, NftCreated, HederaEnviroment} from '../models/hedera.interface';
+import {Fees, HederaAccount, NftCreated, HederaEnviroment, CustomFee} from '../models/hedera.interface';
+import Logger from 'js-logger';
 
 const HEDERA_CREATE_NFT_FEES = 1;
 
@@ -18,21 +27,40 @@ export class HederaSdk {
         });
     }
 
-    async createNFT({name, cid, supply}: { name: string, cid: string, supply: number }): Promise<NftCreated> {
+    async createNFT({
+                        name,
+                        cid,
+                        supply,
+                        customFee
+                    }: { name: string, cid: string, supply: number, customFee: CustomFee | null }): Promise<NftCreated> {
         try {
+            /* Create a royalty fee */
+            const customRoyaltyFee = [];
+            if (customFee) {
+                const fee = new CustomRoyaltyFee()
+                    .setNumerator(customFee.numerator) // The numerator of the fraction
+                    .setDenominator(customFee.denominator) // The denominator of the fraction
+                    .setFallbackFee(new CustomFixedFee().setHbarAmount(new Hbar(customFee.fallbackFee))) // The fallback fee
+                    .setFeeCollectorAccountId(this.hederaAccount.accountId) // The account that will receive the royalty fee
+                customRoyaltyFee.push(fee);
+            }
+
             /* Create the NFT */
-            const tx = await new TokenCreateTransaction()
+            const tx = new TokenCreateTransaction()
+                .setTokenType(TokenType.NonFungibleUnique)
                 .setTokenName(name)
                 .setTokenSymbol(`IPFS://${cid}`)
-                .setDecimals(0)
-                .setInitialSupply(supply)
+                .setInitialSupply(0)
+                .setMaxSupply(supply)
+                .setSupplyType(TokenSupplyType.Finite)
                 .setTreasuryAccountId(this.hederaAccount.accountId)
                 .setAutoRenewAccountId(this.hederaAccount.accountId)
-                .setAutoRenewPeriod(7776000)
-                .signWithOperator(this.client)
+                .setCustomFees(customRoyaltyFee)
 
-            /*  submit to a Hedera network */
-            const response = await tx.execute(this.client);
+            const transaction = await tx.signWithOperator(this.client)
+
+            /*  submit to the Hedera network */
+            const response = await transaction.execute(this.client);
 
             /* Get the receipt of the transaction */
             const receipt = await response.getReceipt(this.client)
@@ -40,10 +68,17 @@ export class HederaSdk {
             /* Get the token ID from the receipt */
             const tokenId = receipt.tokenId;
 
+            /* Generate the Serial Number */
+            const serialNumber = Math.floor(Math.random() * 90000) + 10000;
+            /* Get the NftId */
+            const nftId = new NftId(new TokenId(TokenId.fromString(tokenId!.toString())), serialNumber);
+
+
             return {
                 url: `https://cloudflare-ipfs.com/ipfs/${cid}`,
                 txId: response.transactionId.toString(),
-                tokenId: receipt.tokenId!.toString()
+                tokenId: tokenId!.toString(),
+                nftId: nftId.toString()
             };
         } catch (e) {
             return Promise.reject(e);
@@ -61,7 +96,7 @@ export class HederaSdk {
         }
     }
 
-    private async checkBalance() {
+    async checkBalance() {
         /* Get the Hedera Fees */
         const hederaFees = await this.getFees();
 
@@ -70,8 +105,10 @@ export class HederaSdk {
 
         /* Checking if the user has enough money */
         if (balance < hederaFees.hbar) {
-            await Promise.reject("You don't have enough money available in your account :: Remaining :: "
-                + balance + ' :: Price :: ' + hederaFees);
+            const err = "You don't have enough money available in your account :: Remaining :: "
+                + balance + ' :: Price :: ' + hederaFees;
+            Logger.error(err);
+            await Promise.reject(err);
         }
     }
 
@@ -101,7 +138,7 @@ export class HederaSdk {
             const balance = await new AccountBalanceQuery()
                 .setAccountId(this.hederaAccount.accountId)
                 .execute(this.client)
-            return +balance.hbars.toTinybars().toNumber() / 100000000;
+            return +(balance.hbars.toTinybars().toNumber() / 100000000).toFixed(3);
         } catch (e) {
             return Promise.reject(e);
         }
@@ -111,7 +148,7 @@ export class HederaSdk {
      * Retry the Get Balance method
      */
     private getBalanceWrapper(): Promise<number> {
-        return this.retryOperation(this.getBalance(), 2000, 3) as Promise<number>;
+        return this.retryOperation(this.getBalance(), 4000, 4) as Promise<number>;
     }
 
     /**

@@ -77,6 +77,9 @@ class ClientNFT {
                 return Promise.reject('Please define at least a Media and a Name for your NFT !');
             }
             try {
+                /* Checking the balance */
+                js_logger_1.default.info('Checking user\'s balance...');
+                yield this.hederaSdk.checkBalance();
                 /* Storing the Media */
                 js_logger_1.default.info('Saving the media on FileCoin...');
                 cid = yield storage_sdk_1.storeNFT(Object.assign({ token: this.nftStorageApiKey }, createNFTDto));
@@ -84,8 +87,9 @@ class ClientNFT {
                 js_logger_1.default.info('Creating the NFT on Hedera...');
                 const res = yield this.hederaSdk.createNFT({
                     name: createNFTDto.name,
+                    supply: createNFTDto.supply,
                     cid,
-                    supply: createNFTDto.supply
+                    customFee: createNFTDto.customRoyaltyFee
                 });
                 js_logger_1.default.debug('Your NFT will be available soon on', res.url);
                 return res;

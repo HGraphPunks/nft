@@ -14,14 +14,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteNFT = exports.storeNFT = void 0;
 const axios_1 = __importDefault(require("axios"));
-function storeNFT({ token, name, description, creator, category, supply, media }) {
+function storeNFT({ token, name, description, creator, category, media }) {
     return __awaiter(this, void 0, void 0, function* () {
         return axios_1.default.post('https://nft.storage/api/upload', {
             name,
             description,
             creator,
             category,
-            supply,
+            supply: 1,
             photo: media
         }, {
             headers: {

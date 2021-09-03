@@ -1,18 +1,19 @@
-import { Fees, HederaAccount, NftCreated } from '../models/hedera.interface';
+import { Fees, HederaAccount, NftCreated, CustomFee } from '../models/hedera.interface';
 export declare class HederaSdk {
     readonly hederaAccount: HederaAccount;
     private client;
     constructor(hederaAccount: HederaAccount);
-    createNFT({ name, cid, supply }: {
+    createNFT({ name, cid, supply, customFee }: {
         name: string;
         cid: string;
         supply: number;
+        customFee: CustomFee | null;
     }): Promise<NftCreated>;
     /**
      *  Hedera fees for NFT's creation
      */
     getFees(): Promise<Fees>;
-    private checkBalance;
+    checkBalance(): Promise<void>;
     /**
      * Set Hedera SDK Client
      * @param accountId
