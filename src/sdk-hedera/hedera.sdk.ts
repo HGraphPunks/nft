@@ -2,13 +2,13 @@ import {
     AccountBalanceQuery,
     Client, CustomFixedFee,
     CustomRoyaltyFee, Hbar,
-    NftId,
+    NftId, PrivateKey,
     TokenCreateTransaction,
-    TokenId, TokenSupplyType,
+    TokenId, TokenMintTransaction, TokenSupplyType,
     TokenType
 } from '@hashgraph/sdk';
 import axios from 'axios';
-import {Fees, HederaAccount, NftCreated, HederaEnviroment, CustomFee} from '../models/hedera.interface';
+import {Fees, HederaAccount, NftCreated, HederaEnviroment, CustomFee, CategoryNFT} from '../models/hedera.interface';
 import Logger from 'js-logger';
 
 const HEDERA_CREATE_NFT_FEES = 1;
@@ -29,10 +29,13 @@ export class HederaSdk {
 
     async createNFT({
                         name,
+                        description,
+                        creator,
+                        category,
                         cid,
                         supply,
                         customFee
-                    }: { name: string, cid: string, supply: number, customFee: CustomFee | null }): Promise<NftCreated> {
+                    }: { name: string, description: string, creator: string, category: CategoryNFT, cid: string, supply: number, customFee: CustomFee | null }): Promise<NftCreated> {
         try {
             /* Create a royalty fee */
             const customRoyaltyFee = [];
@@ -45,6 +48,8 @@ export class HederaSdk {
                 customRoyaltyFee.push(fee);
             }
 
+            const supplyKey = PrivateKey.generate();
+
             /* Create the NFT */
             const tx = new TokenCreateTransaction()
                 .setTokenType(TokenType.NonFungibleUnique)
@@ -52,6 +57,7 @@ export class HederaSdk {
                 .setTokenSymbol(`IPFS://${cid}`)
                 .setInitialSupply(0)
                 .setMaxSupply(supply)
+                .setSupplyKey(supplyKey)
                 .setSupplyType(TokenSupplyType.Finite)
                 .setTreasuryAccountId(this.hederaAccount.accountId)
                 .setAutoRenewAccountId(this.hederaAccount.accountId)
@@ -68,17 +74,34 @@ export class HederaSdk {
             /* Get the token ID from the receipt */
             const tokenId = receipt.tokenId;
 
+            /* Mint the token */
+            const mintTransaction = await new TokenMintTransaction()
+                .setTokenId(tokenId!.toString())
+                // .setMetadata([new TextEncoder().encode(JSON.stringify({
+                //     name,
+                //     supply,
+                //     description,
+                //     creator,
+                //     category
+                // }))])
+                .setAmount(supply)
+
+            /* Sign with the supply private key of the token */
+            const signTx = await mintTransaction.freezeWith(this.client).sign(supplyKey);
+
+            /* Submit the transaction to a Hedera network */
+            await signTx.execute(this.client);
+
             /* Generate the Serial Number */
             const serialNumber = Math.floor(Math.random() * 90000) + 10000;
             /* Get the NftId */
             const nftId = new NftId(new TokenId(TokenId.fromString(tokenId!.toString())), serialNumber);
 
-
             return {
                 url: `https://cloudflare-ipfs.com/ipfs/${cid}`,
                 txId: response.transactionId.toString(),
                 tokenId: tokenId!.toString(),
-                nftId: nftId.toString()
+                nftId: nftId.toString(),
             };
         } catch (e) {
             return Promise.reject(e);

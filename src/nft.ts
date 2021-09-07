@@ -63,7 +63,7 @@ export class ClientNFT {
      *  Create a NFT
      * @param createNFTDto
      */
-    async create(createNFTDto: NFTDto): Promise<NftCreated> {
+    async createAndMint(createNFTDto: NFTDto): Promise<NftCreated> {
         let cid;
         if (!createNFTDto.media || !createNFTDto.name) {
             Logger.error('name and media parameters must be defined when calling this method... Check the Usage on https://www.npmjs.com/package/@xact-wallet-sdk/nft#usage');
@@ -81,6 +81,9 @@ export class ClientNFT {
             Logger.info('Creating the NFT on Hedera...');
             const res = await this.hederaSdk.createNFT({
                 name: createNFTDto.name,
+                description: createNFTDto.description,
+                creator: createNFTDto.creator,
+                category: createNFTDto.category,
                 supply: createNFTDto.supply,
                 cid,
                 customFee: createNFTDto.customRoyaltyFee

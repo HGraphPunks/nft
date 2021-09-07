@@ -69,7 +69,7 @@ class ClientNFT {
      *  Create a NFT
      * @param createNFTDto
      */
-    create(createNFTDto) {
+    createAndMint(createNFTDto) {
         return __awaiter(this, void 0, void 0, function* () {
             let cid;
             if (!createNFTDto.media || !createNFTDto.name) {
@@ -87,6 +87,9 @@ class ClientNFT {
                 js_logger_1.default.info('Creating the NFT on Hedera...');
                 const res = yield this.hederaSdk.createNFT({
                     name: createNFTDto.name,
+                    description: createNFTDto.description,
+                    creator: createNFTDto.creator,
+                    category: createNFTDto.category,
                     supply: createNFTDto.supply,
                     cid,
                     customFee: createNFTDto.customRoyaltyFee
