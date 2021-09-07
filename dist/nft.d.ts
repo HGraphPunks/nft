@@ -27,6 +27,6 @@ export declare class ClientNFT {
      *  Create a NFT
      * @param createNFTDto
      */
-    create(createNFTDto: NFTDto): Promise<NftCreated>;
+    createAndMint(createNFTDto: NFTDto): Promise<NftCreated>;
     private static getLogger;
 }

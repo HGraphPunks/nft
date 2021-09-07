@@ -27,7 +27,7 @@ class HederaSdk {
             environment: this.hederaAccount.environment
         });
     }
-    createNFT({ name, cid, supply, customFee }) {
+    createNFT({ name, description, creator, category, cid, supply, customFee }) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 /* Create a royalty fee */
@@ -40,6 +40,7 @@ class HederaSdk {
                         .setFeeCollectorAccountId(this.hederaAccount.accountId); // The account that will receive the royalty fee
                     customRoyaltyFee.push(fee);
                 }
+                const supplyKey = sdk_1.PrivateKey.generate();
                 /* Create the NFT */
                 const tx = new sdk_1.TokenCreateTransaction()
                     .setTokenType(sdk_1.TokenType.NonFungibleUnique)
@@ -47,6 +48,7 @@ class HederaSdk {
                     .setTokenSymbol(`IPFS://${cid}`)
                     .setInitialSupply(0)
                     .setMaxSupply(supply)
+                    .setSupplyKey(supplyKey)
                     .setSupplyType(sdk_1.TokenSupplyType.Finite)
                     .setTreasuryAccountId(this.hederaAccount.accountId)
                     .setAutoRenewAccountId(this.hederaAccount.accountId)
@@ -58,6 +60,21 @@ class HederaSdk {
                 const receipt = yield response.getReceipt(this.client);
                 /* Get the token ID from the receipt */
                 const tokenId = receipt.tokenId;
+                /* Mint the token */
+                const mintTransaction = yield new sdk_1.TokenMintTransaction()
+                    .setTokenId(tokenId.toString())
+                    // .setMetadata([new TextEncoder().encode(JSON.stringify({
+                    //     name,
+                    //     supply,
+                    //     description,
+                    //     creator,
+                    //     category
+                    // }))])
+                    .setAmount(supply);
+                /* Sign with the supply private key of the token */
+                const signTx = yield mintTransaction.freezeWith(this.client).sign(supplyKey);
+                /* Submit the transaction to a Hedera network */
+                yield signTx.execute(this.client);
                 /* Generate the Serial Number */
                 const serialNumber = Math.floor(Math.random() * 90000) + 10000;
                 /* Get the NftId */
@@ -66,7 +83,7 @@ class HederaSdk {
                     url: `https://cloudflare-ipfs.com/ipfs/${cid}`,
                     txId: response.transactionId.toString(),
                     tokenId: tokenId.toString(),
-                    nftId: nftId.toString()
+                    nftId: nftId.toString(),
                 };
             }
             catch (e) {
