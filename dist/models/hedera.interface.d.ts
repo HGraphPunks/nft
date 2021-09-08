@@ -16,7 +16,7 @@ export interface NftCreated {
     url: string;
     txId: string;
     tokenId: string;
-    nftId: string;
+    nftIds: Array<string>;
 }
 export interface Fees {
     hbar: number;

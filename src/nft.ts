@@ -81,7 +81,6 @@ export class ClientNFT {
             Logger.info('Creating the NFT on Hedera...');
             const res = await this.hederaSdk.createNFT({
                 name: createNFTDto.name,
-                description: createNFTDto.description,
                 creator: createNFTDto.creator,
                 category: createNFTDto.category,
                 supply: createNFTDto.supply,

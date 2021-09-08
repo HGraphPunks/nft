@@ -3,9 +3,8 @@ export declare class HederaSdk {
     readonly hederaAccount: HederaAccount;
     private client;
     constructor(hederaAccount: HederaAccount);
-    createNFT({ name, description, creator, category, cid, supply, customFee }: {
+    createNFT({ name, creator, category, cid, supply, customFee }: {
         name: string;
-        description: string;
         creator: string;
         category: CategoryNFT;
         cid: string;
