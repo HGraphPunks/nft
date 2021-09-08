@@ -4,7 +4,7 @@ import {
     CustomRoyaltyFee, Hbar,
     NftId, PrivateKey,
     TokenCreateTransaction,
-    TokenId, TokenMintTransaction, TokenSupplyType,
+    TokenId, TokenMintTransaction, TokenNftInfoQuery, TokenSupplyType,
     TokenType
 } from '@hashgraph/sdk';
 import axios from 'axios';
@@ -29,13 +29,12 @@ export class HederaSdk {
 
     async createNFT({
                         name,
-                        description,
                         creator,
                         category,
                         cid,
                         supply,
                         customFee
-                    }: { name: string, description: string, creator: string, category: CategoryNFT, cid: string, supply: number, customFee: CustomFee | null }): Promise<NftCreated> {
+                    }: { name: string, creator: string, category: CategoryNFT, cid: string, supply: number, customFee: CustomFee | null }): Promise<NftCreated> {
         try {
             /* Create a royalty fee */
             const customRoyaltyFee = [];
@@ -55,10 +54,10 @@ export class HederaSdk {
                 .setTokenType(TokenType.NonFungibleUnique)
                 .setTokenName(name)
                 .setTokenSymbol(`IPFS://${cid}`)
-                .setInitialSupply(0)
-                .setMaxSupply(supply)
                 .setSupplyKey(supplyKey)
                 .setSupplyType(TokenSupplyType.Finite)
+                .setInitialSupply(0)
+                .setMaxSupply(supply)
                 .setTreasuryAccountId(this.hederaAccount.accountId)
                 .setAutoRenewAccountId(this.hederaAccount.accountId)
                 .setCustomFees(customRoyaltyFee)
@@ -75,33 +74,32 @@ export class HederaSdk {
             const tokenId = receipt.tokenId;
 
             /* Mint the token */
-            const mintTransaction = await new TokenMintTransaction()
-                .setTokenId(tokenId!.toString())
-                // .setMetadata([new TextEncoder().encode(JSON.stringify({
-                //     name,
-                //     supply,
-                //     description,
-                //     creator,
-                //     category
-                // }))])
-                .setAmount(supply)
+            const mintTransaction = new TokenMintTransaction()
+                .setTokenId(tokenId!)
+
+            for (let i = 0; i < supply; i++) {
+                mintTransaction.addMetadata(Buffer.from(JSON.stringify({name, creator, category, supply})));
+            }
 
             /* Sign with the supply private key of the token */
             const signTx = await mintTransaction.freezeWith(this.client).sign(supplyKey);
-
             /* Submit the transaction to a Hedera network */
-            await signTx.execute(this.client);
+            const resp = await signTx.execute(this.client);
+            const receiptMint = await resp.getReceipt(this.client);
+            /* Get the Serial Number */
+            const serialNumber = receiptMint.serials;
 
-            /* Generate the Serial Number */
-            const serialNumber = Math.floor(Math.random() * 90000) + 10000;
             /* Get the NftId */
-            const nftId = new NftId(new TokenId(TokenId.fromString(tokenId!.toString())), serialNumber);
+            let nftIds = [];
+            for (const nftSerial of serialNumber.values()) {
+                nftIds.push(new NftId(tokenId!, nftSerial).toString());
+            }
 
             return {
                 url: `https://cloudflare-ipfs.com/ipfs/${cid}`,
                 txId: response.transactionId.toString(),
                 tokenId: tokenId!.toString(),
-                nftId: nftId.toString(),
+                nftIds,
             };
         } catch (e) {
             return Promise.reject(e);
