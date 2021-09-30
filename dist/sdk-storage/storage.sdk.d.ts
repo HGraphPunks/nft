@@ -1,5 +1,9 @@
 import { NFTDto } from '../models/hedera.interface';
-export declare function storeNFT({ token, name, description, creator, category, media }: NFTDto & {
+export declare function storeMetadata({ token, name, description, supply, creator, category, cid }: NFTDto & {
+    token: string;
+    cid: string;
+}): Promise<any>;
+export declare function storeNFT({ token, media }: NFTDto & {
     token: string;
 }): Promise<any>;
 export declare function deleteNFT({ cid, token }: {

@@ -1,9 +1,9 @@
-import { Fees, HederaAccount, NftCreated, CustomFee, CategoryNFT } from '../models/hedera.interface';
+import { Fees, HederaAccount, NftCreated, CustomFee, CategoryNFT } from "../models/hedera.interface";
 export declare class HederaSdk {
     readonly hederaAccount: HederaAccount;
     private client;
     constructor(hederaAccount: HederaAccount);
-    createNFT({ name, creator, category, cid, supply, customFee }: {
+    createNFT({ name, creator, category, cid, supply, customFee, }: {
         name: string;
         creator: string;
         category: CategoryNFT;

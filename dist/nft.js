@@ -71,6 +71,7 @@ class ClientNFT {
      */
     createAndMint(createNFTDto) {
         return __awaiter(this, void 0, void 0, function* () {
+            let cidMetadata;
             let cid;
             if (!createNFTDto.media || !createNFTDto.name) {
                 js_logger_1.default.error('name and media parameters must be defined when calling this method... Check the Usage on https://www.npmjs.com/package/@xact-wallet-sdk/nft#usage');
@@ -83,6 +84,8 @@ class ClientNFT {
                 /* Storing the Media */
                 js_logger_1.default.info('Saving the media on FileCoin...');
                 cid = yield storage_sdk_1.storeNFT(Object.assign({ token: this.nftStorageApiKey }, createNFTDto));
+                js_logger_1.default.info('Saving the metadata on FileCoin...');
+                cidMetadata = yield storage_sdk_1.storeMetadata(Object.assign(Object.assign({ token: this.nftStorageApiKey }, createNFTDto), { cid }));
                 /* Create the NFT */
                 js_logger_1.default.info('Creating the NFT on Hedera...');
                 const res = yield this.hederaSdk.createNFT({
@@ -90,7 +93,7 @@ class ClientNFT {
                     creator: createNFTDto.creator,
                     category: createNFTDto.category,
                     supply: createNFTDto.supply,
-                    cid,
+                    cid: cidMetadata,
                     customFee: createNFTDto.customRoyaltyFee
                 });
                 js_logger_1.default.debug('Your NFT will be available soon on', res.url);
@@ -101,6 +104,9 @@ class ClientNFT {
                 /* Remove the File from Storage if an error occurred while creating the NFT on Hedera */
                 if (cid) {
                     js_logger_1.default.warn('Removing your media from FileCoin...');
+                    if (cidMetadata) {
+                        yield storage_sdk_1.deleteNFT({ cid: cidMetadata, token: this.nftStorageApiKey });
+                    }
                     yield storage_sdk_1.deleteNFT({ cid, token: this.nftStorageApiKey });
                 }
                 return Promise.reject(e);

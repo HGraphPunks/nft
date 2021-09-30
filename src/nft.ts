@@ -1,7 +1,7 @@
 import {HederaAccount, HederaEnviroment, NftCreated, NFTDto} from './models/hedera.interface';
 import {Fees} from './models/hedera.interface';
 import {HederaSdk} from './sdk-hedera/hedera.sdk';
-import {deleteNFT, storeNFT} from './sdk-storage/storage.sdk';
+import {deleteNFT, storeMetadata, storeNFT} from './sdk-storage/storage.sdk';
 import Logger from 'js-logger';
 
 /* Export Interfaces */
@@ -64,6 +64,7 @@ export class ClientNFT {
      * @param createNFTDto
      */
     async createAndMint(createNFTDto: NFTDto): Promise<NftCreated> {
+        let cidMetadata;
         let cid;
         if (!createNFTDto.media || !createNFTDto.name) {
             Logger.error('name and media parameters must be defined when calling this method... Check the Usage on https://www.npmjs.com/package/@xact-wallet-sdk/nft#usage');
@@ -76,6 +77,8 @@ export class ClientNFT {
             /* Storing the Media */
             Logger.info('Saving the media on FileCoin...');
             cid = await storeNFT({token: this.nftStorageApiKey, ...createNFTDto});
+            Logger.info('Saving the metadata on FileCoin...');
+            cidMetadata = await storeMetadata({token: this.nftStorageApiKey, ...createNFTDto, cid});
 
             /* Create the NFT */
             Logger.info('Creating the NFT on Hedera...');
@@ -84,7 +87,7 @@ export class ClientNFT {
                 creator: createNFTDto.creator,
                 category: createNFTDto.category,
                 supply: createNFTDto.supply,
-                cid,
+                cid: cidMetadata,
                 customFee: createNFTDto.customRoyaltyFee
             });
             Logger.debug('Your NFT will be available soon on', res.url);
@@ -94,6 +97,9 @@ export class ClientNFT {
             /* Remove the File from Storage if an error occurred while creating the NFT on Hedera */
             if (cid) {
                 Logger.warn('Removing your media from FileCoin...');
+                if (cidMetadata) {
+                    await deleteNFT({cid: cidMetadata, token: this.nftStorageApiKey})
+                }
                 await deleteNFT({cid, token: this.nftStorageApiKey})
             }
             return Promise.reject(e);

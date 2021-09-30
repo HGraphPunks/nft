@@ -24,10 +24,10 @@ class HederaSdk {
         this.client = this.setClient({
             accountId: this.hederaAccount.accountId,
             privateKey: this.hederaAccount.privateKey,
-            environment: this.hederaAccount.environment
+            environment: this.hederaAccount.environment,
         });
     }
-    createNFT({ name, creator, category, cid, supply, customFee }) {
+    createNFT({ name, creator, category, cid, supply, customFee, }) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 /* Create a royalty fee */
@@ -61,22 +61,27 @@ class HederaSdk {
                 /* Get the token ID from the receipt */
                 const tokenId = receipt.tokenId;
                 /* Mint the token */
-                const mintTransaction = new sdk_1.TokenMintTransaction()
-                    .setTokenId(tokenId);
-                for (let i = 0; i < supply; i++) {
-                    mintTransaction.addMetadata(Buffer.from(JSON.stringify({ name, creator, category, supply })));
-                }
-                /* Sign with the supply private key of the token */
-                const signTx = yield mintTransaction.freezeWith(this.client).sign(supplyKey);
-                /* Submit the transaction to a Hedera network */
-                const resp = yield signTx.execute(this.client);
-                const receiptMint = yield resp.getReceipt(this.client);
-                /* Get the Serial Number */
-                const serialNumber = receiptMint.serials;
-                /* Get the NftId */
                 let nftIds = [];
-                for (const nftSerial of serialNumber.values()) {
-                    nftIds.push(new sdk_1.NftId(tokenId, nftSerial).toString());
+                const limit_chunk = 5;
+                const nbOfChunk = Math.ceil(supply / limit_chunk);
+                for (let i = 0; i < nbOfChunk; i++) {
+                    const mintTransaction = new sdk_1.TokenMintTransaction().setTokenId(tokenId);
+                    for (let i = 0; i < limit_chunk; i++) {
+                        mintTransaction.addMetadata(Buffer.from(`https://cloudflare-ipfs.com/ipfs/${cid}`));
+                    }
+                    /* Sign with the supply private key of the token */
+                    const signTx = yield mintTransaction
+                        .freezeWith(this.client)
+                        .sign(supplyKey);
+                    /* Submit the transaction to a Hedera network */
+                    const resp = yield signTx.execute(this.client);
+                    const receiptMint = yield resp.getReceipt(this.client);
+                    /* Get the Serial Number */
+                    const serialNumber = receiptMint.serials;
+                    /* Get the NftId */
+                    for (const nftSerial of serialNumber.values()) {
+                        nftIds.push(new sdk_1.NftId(tokenId, nftSerial).toString());
+                    }
                 }
                 return {
                     url: `https://cloudflare-ipfs.com/ipfs/${cid}`,
@@ -98,7 +103,7 @@ class HederaSdk {
             const hbarPrice = yield this.getHbarToCurrency();
             return {
                 usd: HEDERA_CREATE_NFT_FEES,
-                hbar: +parseFloat((HEDERA_CREATE_NFT_FEES / hbarPrice).toFixed(3))
+                hbar: +parseFloat((HEDERA_CREATE_NFT_FEES / hbarPrice).toFixed(3)),
             };
         });
     }
@@ -110,8 +115,10 @@ class HederaSdk {
             const balance = yield this.getBalanceWrapper();
             /* Checking if the user has enough money */
             if (balance < hederaFees.hbar) {
-                const err = "You don't have enough money available in your account :: Remaining :: "
-                    + balance + ' :: Price :: ' + hederaFees;
+                const err = "You don't have enough money available in your account :: Remaining :: " +
+                    balance +
+                    " :: Price :: " +
+                    hederaFees;
                 js_logger_1.default.error(err);
                 yield Promise.reject(err);
             }
@@ -162,24 +169,22 @@ class HederaSdk {
     getHbarToCurrency() {
         return axios_1.default
             .get(`https://api.coingecko.com/api/v3/coins/hedera-hashgraph?market_data=true`)
-            .then(res => {
-            return +res.data.market_data.current_price['usd'];
+            .then((res) => {
+            return +res.data.market_data.current_price["usd"];
         });
     }
     wait(ms) {
-        return new Promise(r => setTimeout(r, ms));
+        return new Promise((r) => setTimeout(r, ms));
     }
     retryOperation(operation, delay, retries) {
         return new Promise((resolve, reject) => {
-            return operation
-                .then(resolve)
-                .catch((reason) => {
+            return operation.then(resolve).catch((reason) => {
                 if (retries > 0) {
-                    return this.wait(delay)
+                    return (this.wait(delay)
                         .then(this.retryOperation.bind(null, operation, delay, retries - 1))
                         // @ts-ignore
                         .then(resolve)
-                        .catch(reject);
+                        .catch(reject));
                 }
                 return reject(reason);
             });
