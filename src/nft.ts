@@ -65,7 +65,7 @@ export class ClientNFT {
      */
     async createAndMint(createNFTDto: NFTDto): Promise<NftCreated> {
         let cid;
-        if (!createNFTDto.media || !createNFTDto.name) {
+        if ((!createNFTDto.media && !createNFTDto.customNFTJson) || !createNFTDto.name) {
             Logger.error('name and media parameters must be defined when calling this method... Check the Usage on https://www.npmjs.com/package/@xact-wallet-sdk/nft#usage');
             return Promise.reject('Please define at least a Media and a Name for your NFT !');
         }
@@ -75,7 +75,9 @@ export class ClientNFT {
             await this.hederaSdk.checkBalance();
             /* Storing the Media */
             Logger.info('Saving the media on FileCoin...');
-            cid = await storeNFT({token: this.nftStorageApiKey, ...createNFTDto});
+
+            const nftStoreObj = {token: this.nftStorageApiKey, ...createNFTDto};
+            cid = await storeNFT(nftStoreObj);
 
             /* Create the NFT */
             Logger.info('Creating the NFT on Hedera...');
@@ -85,7 +87,8 @@ export class ClientNFT {
                 category: createNFTDto.category,
                 supply: createNFTDto.supply,
                 cid,
-                customFee: createNFTDto.customRoyaltyFee
+                customFee: createNFTDto.customRoyaltyFee,
+                customNFTJson: createNFTDto.customNFTJson,
             });
             Logger.debug('Your NFT will be available soon on', res.url);
             return res;
