@@ -7,22 +7,23 @@ export async function storeNFT({
                                    description,
                                    creator,
                                    category,
-                                   media
+                                   media,
+                                   customNFTJson
                                }: NFTDto & { token: string }) {
-    return axios.post('https://nft.storage/api/upload', {
+    return axios.post('https://nft.storage/api/upload', customNFTJson ? customNFTJson :{
         name,
         description,
         creator,
         category,
         supply: 1,
-        photo: media
+        image: media,
     }, {
         headers: {
             common: {
                 Authorization: `Bearer ${token}`,
             },
         },
-    }).then((res) => {
+    }).then((res: any) => {
         return res.data.value.cid;
     });
 }

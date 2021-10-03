@@ -8,7 +8,7 @@ import {
     TokenType
 } from '@hashgraph/sdk';
 import axios from 'axios';
-import {Fees, HederaAccount, NftCreated, HederaEnviroment, CustomFee, CategoryNFT} from '../models/hedera.interface';
+import {Fees, HederaAccount, NftCreated, HederaEnviroment, CreateNFT} from '../models/hedera.interface';
 import Logger from 'js-logger';
 
 const HEDERA_CREATE_NFT_FEES = 1;
@@ -33,8 +33,8 @@ export class HederaSdk {
                         category,
                         cid,
                         supply,
-                        customFee
-                    }: { name: string, creator: string, category: CategoryNFT, cid: string, supply: number, customFee: CustomFee | null }): Promise<NftCreated> {
+                        customFee,
+                    }: CreateNFT): Promise<NftCreated> {
         try {
             /* Create a royalty fee */
             const customRoyaltyFee = [];
@@ -80,7 +80,6 @@ export class HederaSdk {
             for (let i = 0; i < supply; i++) {
                 mintTransaction.addMetadata(Buffer.from(JSON.stringify({name, creator, category, supply})));
             }
-
             /* Sign with the supply private key of the token */
             const signTx = await mintTransaction.freezeWith(this.client).sign(supplyKey);
             /* Submit the transaction to a Hedera network */
