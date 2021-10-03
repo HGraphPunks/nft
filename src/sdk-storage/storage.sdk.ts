@@ -16,7 +16,7 @@ export async function storeNFT({
         creator,
         category,
         supply: 1,
-        image: media,
+        image: media
     }, {
         headers: {
             common: {

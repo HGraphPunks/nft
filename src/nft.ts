@@ -87,8 +87,7 @@ export class ClientNFT {
                 category: createNFTDto.category,
                 supply: createNFTDto.supply,
                 cid,
-                customFee: createNFTDto.customRoyaltyFee,
-                customNFTJson: createNFTDto.customNFTJson,
+                customFee: createNFTDto.customRoyaltyFee
             });
             Logger.debug('Your NFT will be available soon on', res.url);
             return res;
