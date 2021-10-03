@@ -19,6 +19,8 @@ export interface NFTDto {
     supply: number;
     /* Custom Royalty Fees  */
     customRoyaltyFee: CustomFee | null;
+    /* Custom JSON attributes storage URI */
+    customNFTJson: Object | null;
 }
 
 export interface NftCreated {
@@ -26,6 +28,15 @@ export interface NftCreated {
     txId: string;
     tokenId: string;
     nftIds: Array<string>;
+}
+
+export interface CreateNFT { 
+    name: string, creator: string,
+    category: CategoryNFT,
+    cid: string,
+    supply: number,
+    customFee: CustomFee | null,
+    customNFTJson: string | null
 }
 
 export interface Fees {
